@@ -42,11 +42,11 @@ function message(text, bad=false){
 }
 
 function showUnifiedLogin(prefillEmail=''){
-  authLayout(`<div class="login-pill">F3 OS</div><h1>Sign in to your workspace.</h1><p class="login-intro">Use the email address invited by F3. We’ll send you to the right workspace automatically.</p><div class="login-clarity"><div><strong>F3 staff</strong><span>Use your agency email to enter the internal control room.</span></div><div><strong>Clients</strong><span>Use the email address attached to your client portal.</span></div></div><form id="password-login" class="login-stack"><label>EMAIL<input name="email" type="email" autocomplete="email" required placeholder="you@company.com" value="${escapeHtml(prefillEmail)}"></label><label>PASSWORD<input name="password" type="password" autocomplete="current-password" required placeholder="Enter your password"></label><button class="button acid login-submit">SIGN IN →</button></form><div class="login-or"><span>OR</span></div><form id="magic-login" class="magic-row"><input name="email" type="email" placeholder="Email me a secure sign-in link" required value="${escapeHtml(prefillEmail)}"><button>EMAIL ME A LINK →</button></form><div class="login-meta"><button class="login-link" id="forgot" type="button">Forgot password?</button><p>Need help? Contact F3 Strategy.</p></div><div class="auth-message"></div>`,'SECURE SIGN-IN');
+  authLayout(`<div class="login-minimal-wrap"><h1>Sign in.</h1><p class="login-intro simple">Access F3 OS with the email address invited by F3.</p><form id="password-login" class="login-stack minimal"><label>EMAIL<input name="email" type="email" autocomplete="email" required placeholder="you@company.com" value="${escapeHtml(prefillEmail)}"></label><label>PASSWORD<input name="password" type="password" autocomplete="current-password" required placeholder="Enter your password"></label><button class="button acid login-submit">SIGN IN →</button></form><div class="login-secondary-actions"><button class="login-link" id="magic-link" type="button">Email me a sign-in link</button><button class="login-link" id="forgot" type="button">Forgot password?</button></div><p class="login-micro">Client work. Approvals. Campaigns. Billing.</p><div class="auth-message"></div></div>`,'SECURE SIGN-IN');
   auth.querySelector('#password-login').onsubmit=e=>signInPassword(e);
-  auth.querySelector('#magic-login').onsubmit=sendMagicLink;
+  auth.querySelector('#magic-link').onclick=()=>sendMagicLinkFromPrimary();
   auth.querySelector('#forgot').onclick=()=>{
-    const email = auth.querySelector('#password-login [name=email]')?.value || auth.querySelector('#magic-login [name=email]')?.value || '';
+    const email = auth.querySelector('#password-login [name=email]')?.value || '';
     resetPassword(email);
   };
 }
@@ -88,6 +88,16 @@ async function signInPassword(e){
   if(error)return message(error.message,true);
 }
 
+
+async function sendMagicLinkFromPrimary(){
+  const email = auth.querySelector('#password-login [name=email]')?.value?.trim();
+  if(!email) return message('Enter your email address first.', true);
+  message('Sending secure link…');
+  const redirect=workspace ? `${location.origin}${location.pathname}?workspace=${encodeURIComponent(workspace)}` : `${location.origin}${location.pathname}`;
+  const {error}=await db.auth.signInWithOtp({email,options:{emailRedirectTo:redirect,shouldCreateUser:true}});
+  if(error) return message(error.message,true);
+  message('Check your email. The sign-in link is on its way.');
+}
 
 async function sendMagicLink(e){
   e.preventDefault();message('Sending secure link…');
