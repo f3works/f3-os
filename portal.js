@@ -41,25 +41,33 @@ function message(text, bad=false){
   if(el){el.textContent=text; el.classList.toggle('bad',bad)}
 }
 
+function showUnifiedLogin(prefillEmail=''){
+  authLayout(`<div class="login-pill">F3 OS</div><h1>Sign in to your workspace.</h1><p class="login-intro">Use the email address invited by F3. We’ll send you to the right workspace automatically.</p><div class="login-clarity"><div><strong>F3 staff</strong><span>Use your agency email to enter the internal control room.</span></div><div><strong>Clients</strong><span>Use the email address attached to your client portal.</span></div></div><form id="password-login" class="login-stack"><label>EMAIL<input name="email" type="email" autocomplete="email" required placeholder="you@company.com" value="${escapeHtml(prefillEmail)}"></label><label>PASSWORD<input name="password" type="password" autocomplete="current-password" required placeholder="Enter your password"></label><button class="button acid login-submit">SIGN IN →</button></form><div class="login-or"><span>OR</span></div><form id="magic-login" class="magic-row"><input name="email" type="email" placeholder="Email me a secure sign-in link" required value="${escapeHtml(prefillEmail)}"><button>EMAIL ME A LINK →</button></form><div class="login-meta"><button class="login-link" id="forgot" type="button">Forgot password?</button><p>Need help? Contact F3 Strategy.</p></div><div class="auth-message"></div>`,'SECURE SIGN-IN');
+  auth.querySelector('#password-login').onsubmit=e=>signInPassword(e);
+  auth.querySelector('#magic-login').onsubmit=sendMagicLink;
+  auth.querySelector('#forgot').onclick=()=>{
+    const email = auth.querySelector('#password-login [name=email]')?.value || auth.querySelector('#magic-login [name=email]')?.value || '';
+    resetPassword(email);
+  };
+}
+
 async function showEntry(){
   if(!configured){
-    authLayout(`<h1>One wire is missing.</h1><p class="login-intro">Netlify needs VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY, then redeploy.</p>`,'SETUP REQUIRED');
+    authLayout(`<h1>One wire is missing.</h1><p class="login-intro">The public Supabase login settings are missing from this build.</p>`,'SETUP REQUIRED');
     return;
   }
   if(workspace){
     workspaceSettings = await getWorkspace(workspace);
     if(workspaceSettings) return showClientLogin();
   }
-  authLayout(`<h1>Choose your door.</h1><p class="login-intro">F3 works inside. Clients enter their own workspace.</p><div class="login-choice-grid"><button class="login-choice acid-choice" id="staff-door"><span>01</span><strong>F3 TEAM</strong><small>Internal control room →</small></button><div class="login-choice client-choice"><span>02</span><strong>CLIENT</strong><small>Enter your workspace code</small><form id="workspace-form"><input name="workspace" placeholder="suenos-tequila" autocomplete="off"><button>ENTER →</button></form></div></div><div class="auth-message"></div>`);
-  auth.querySelector('#staff-door').onclick=showStaffLogin;
-  auth.querySelector('#workspace-form').onsubmit=async e=>{e.preventDefault();const slug=new FormData(e.currentTarget).get('workspace').toString().trim().toLowerCase();const found=await getWorkspace(slug);if(!found)return message('Workspace not found.',true);workspace=slug;workspaceSettings=found;history.replaceState({},'',`?workspace=${encodeURIComponent(slug)}`);showClientLogin()};
+  showUnifiedLogin();
 }
 
 function showStaffLogin(){
   workspace='';workspaceSettings=null;history.replaceState({},'',location.pathname);
   authLayout(`<button class="login-back" id="back">← BACK</button><h1>Make the work move.</h1><p class="login-intro">F3 team access.</p><form id="password-login" class="login-stack"><label>EMAIL<input name="email" type="email" autocomplete="email" required value="jason@f3works.com"></label><label>PASSWORD<input name="password" type="password" autocomplete="current-password" required></label><button class="button acid">ENTER F3 →</button></form><button class="login-link" id="forgot">Forgot password?</button><div class="auth-message"></div>`,'INTERNAL ACCESS');
   auth.querySelector('#back').onclick=showEntry;
-  auth.querySelector('#password-login').onsubmit=e=>signInPassword(e,true);
+  auth.querySelector('#password-login').onsubmit=e=>signInPassword(e);
   auth.querySelector('#forgot').onclick=()=>resetPassword(auth.querySelector('[name=email]').value);
 }
 
@@ -69,22 +77,22 @@ function showClientLogin(){
   const canMagic=['magic_link','both'].includes(w.auth_method);
   authLayout(`<button class="login-back" id="back">← BACK</button><div class="workspace-tag">WORKSPACE / ${escapeHtml(w.display_name).toUpperCase()}</div><h1>Your work.<br>Your call.</h1><p class="login-intro">Review, comment and approve without digging through email.</p>${canPassword?`<form id="password-login" class="login-stack"><label>EMAIL<input name="email" type="email" autocomplete="email" required></label><label>PASSWORD<input name="password" type="password" autocomplete="current-password" required></label><button class="button acid">SIGN IN →</button></form>`:''}${canPassword&&canMagic?'<div class="login-or"><span>OR</span></div>':''}${canMagic?`<form id="magic-login" class="magic-row"><input name="email" type="email" placeholder="you@company.com" required><button>EMAIL ME A SIGN-IN LINK →</button></form>`:''}<div class="auth-message"></div>`,'CLIENT ACCESS');
   auth.querySelector('#back').onclick=showEntry;
-  auth.querySelector('#password-login')?.addEventListener('submit',e=>signInPassword(e,false));
+  auth.querySelector('#password-login')?.addEventListener('submit',e=>signInPassword(e));
   auth.querySelector('#magic-login')?.addEventListener('submit',sendMagicLink);
 }
 
-async function signInPassword(e,staffOnly){
+async function signInPassword(e){
   e.preventDefault();message('Signing in…');
   const f=new FormData(e.currentTarget);
   const {error}=await db.auth.signInWithPassword({email:f.get('email'),password:f.get('password')});
   if(error)return message(error.message,true);
-  sessionStorage.setItem('f3-login-context',staffOnly?'staff':workspace||'client');
 }
+
 
 async function sendMagicLink(e){
   e.preventDefault();message('Sending secure link…');
   const email=new FormData(e.currentTarget).get('email');
-  const redirect=`${location.origin}${location.pathname}?workspace=${encodeURIComponent(workspace)}`;
+  const redirect=workspace ? `${location.origin}${location.pathname}?workspace=${encodeURIComponent(workspace)}` : `${location.origin}${location.pathname}`;
   const {error}=await db.auth.signInWithOtp({email,options:{emailRedirectTo:redirect,shouldCreateUser:true}});
   if(error)return message(error.message,true);
   message('Check your email. The link will bring you straight back here.');
