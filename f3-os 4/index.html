@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="F3 Strategy agency operating system" />
+  <title>F3 OS — Agency Control Room</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <div class="noise"></div>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <button class="brand-lockup" data-view="dashboard" aria-label="F3 OS dashboard">
+        <img src="./assets/f3-logo.png" alt="F3 Strategy" />
+        <span>OPERATING<br>SYSTEM</span>
+      </button>
+      <nav id="main-nav" aria-label="Main navigation"></nav>
+      <div class="sidebar-bottom">
+        <div class="pulse"><i></i><span>System live</span></div>
+        <button class="profile-button" type="button">
+          <span class="avatar">JG</span>
+          <span><strong>Jason</strong><small>F3 Director</small></span>
+          <b>↗</b>
+        </button>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <header class="topbar">
+        <div class="topbar-title">
+          <span class="section-number" id="page-number">01</span>
+          <div>
+            <p class="eyebrow" id="page-eyebrow">CONTROL ROOM</p>
+            <h1 id="page-title">Today at F3.</h1>
+          </div>
+        </div>
+        <div class="topbar-actions">
+          <button class="icon-action" id="search-button" aria-label="Search">⌕</button>
+          <button class="button ghost" id="quick-add"><span>＋</span> Add work</button>
+          <button class="button acid" id="new-client">New client ↗</button>
+        </div>
+      </header>
+
+      <section id="view" class="view" aria-live="polite"></section>
+    </main>
+  </div>
+
+  <dialog id="modal">
+    <form method="dialog" class="modal-card" id="modal-form">
+      <div class="modal-stripe"></div>
+      <div class="modal-header">
+        <div><p class="eyebrow">MAKE SOMETHING HAPPEN</p><h2 id="modal-title">Add item</h2></div>
+        <button class="close-button" value="cancel" aria-label="Close">×</button>
+      </div>
+      <div id="modal-fields" class="form-grid"></div>
+      <div class="modal-actions">
+        <button class="button ghost-dark" value="cancel">Cancel</button>
+        <button class="button acid" value="default" id="modal-save">Save it ↗</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="./app.js" type="module"></script>
+  <script src="./portal.js" type="module"></script>
+</body>
+</html>
