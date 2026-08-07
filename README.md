@@ -1,3 +1,5 @@
+deployment refresh
+
 # F3 OS
 
 A portable starter for F3 Works' external-client operating system.
